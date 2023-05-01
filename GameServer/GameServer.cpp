@@ -129,4 +129,13 @@ int main()
 	// 결론)
 	// mutex, condition_variable까지 가지 않고 단순한 일을 처리할 때 사용 가능함
 	// 특히 단발성 이벤트에 유용.
+
+	// 1) async
+	// 원하는 함수 비동기 실행
+
+	// 2) promise
+	// 결과물을 promise를 통해 future로 get
+
+	// 3) packaged_task
+	// 원하는 함수의 실행 결과를 packaged_task를 통해 future로 get
 }
