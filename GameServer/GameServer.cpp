@@ -30,11 +30,6 @@ public:
 	{
 		WRITE_LOCK;
 
-		while (true)
-		{
-
-		}
-
 		_queue.push(rand() % 100);
 	}
 
