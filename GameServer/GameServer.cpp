@@ -8,7 +8,7 @@
 #include "ConcurrentQueue.h"
 #include "ConcurrentStack.h"
 
-LockQueue<int32> q;
+LockFreeQueue<int32> q;
 LockFreeStack<int32> s;
 
 void Push()
