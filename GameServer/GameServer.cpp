@@ -6,33 +6,32 @@
 #include <future>
 #include <Windows.h>
 
-atomic<bool> ready = false;
-int32 value;
+int32 GValue;
+thread_local int32 LThreadId = 0;
+thread_local queue<int32> q;
 
-void Producer()
+void ThreadMain(int32 threadId)
 {
-	value = 10;
+	LThreadId = threadId;
 
-	ready.store(true, memory_order::memory_order_seq_cst);
-}
-
-void Consumer()
-{
-	while (ready.load(memory_order::memory_order_seq_cst) == false)
+	while (true)
 	{
-		;
+		cout << "Thread ID: " << LThreadId << endl;
+		this_thread::sleep_for(1s);
 	}
-
-	cout << value << endl;
 }
 int main()
 {
-	ready = false;
-	value = 0;
+	vector<thread> threads;
 
-	thread t1(Producer);
-	thread t2(Consumer);
+	for (int32 i = 0; i < 10; i++)
+	{
+		int32 threadId = i + 1;
+		threads.push_back(thread(ThreadMain, threadId));
+	}
 
-	t1.join();
-	t2.join();
+	for (thread& t : threads)
+	{
+		t.join();
+	}
 }
