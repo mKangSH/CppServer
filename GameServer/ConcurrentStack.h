@@ -46,129 +46,154 @@ private:
 	condition_variable _condVar;
 };
 
+#pragma region /*LockFreeStack based on atomic*/
+//template<typename T>
+//class LockFreeStack
+//{
+//	struct Node
+//	{
+//		Node(const T& value) : data(make_shared<T>(value)), next(nullptr)
+//		{
+//
+//		}
+//
+//		shared_ptr<T> data;
+//		shared_ptr<Node> next;
+//	};
+//
+//public:
+//	void Push(const T& value)
+//	{
+//		shared_ptr<Node> node = make_shared<Node>(value);
+//		// 복사해서 대입하는 순간 어떤 위치에서 shared_ptr의 사용이 끝나 reference count 가 줄게 되면 메모리가 날라가기 때문에 atomic_load로 실행
+//		node->next = std::atomic_load(&_head);
+//
+//		while (std::atomic_compare_exchange_weak(&_head, &node->next, node) == false)
+//		{
+//
+//		}
+//	}
+//
+//	// concurrency in action 에선 bool이 아닌 shared_ptr로 예외 처리
+//	shared_ptr<T> TryPop()
+//	{
+//		shared_ptr<Node> oldHead = std::atomic_load(&_head);
+//
+//		while (oldHead && std::atomic_compare_exchange_weak(&_head, &oldHead, oldHead->next) == false)
+//		{
+//
+//		}
+//
+//		if (oldHead == nullptr)
+//		{
+//			return shared_ptr<T>();
+//		}
+//
+//		return oldHead->data;
+//	}
+//
+//
+//private:
+//	// atomic_is_lock_free(); 로 확인한 shared_ptr 동작이 lock free가 아니기 때문에
+//	// atomic 연산을 사용한 lock free stack 구현은 엄밀하게 따지면 lock free가 아니다.
+//
+//	shared_ptr<Node> _head;
+//};
+#pragma endregion
+
 template<typename T>
 class LockFreeStack
 {
+	struct Node;
+
+	struct CountedNodePtr
+	{
+		int32 externalCount = 0;
+		Node* ptr = nullptr;
+	};
+
 	struct Node
 	{
-		Node(const T& value) : data(value), next(nullptr)
+		Node(const T& value) : data(make_shared<T>(value))
 		{
 
 		}
 
-		T data;
-		Node* next;
+		shared_ptr<T> data;
+		atomic<int32> internalCount = 0;
+		CountedNodePtr next;
 	};
 
 public:
 	void Push(const T& value)
 	{
-		Node* node = new Node(value);
-		node->next = _head;
-
-		while (_head.compare_exchange_weak(node->next, node) == false)
+		CountedNodePtr node;
+		node.ptr = new Node(value);
+		node.externalCount = 1;
+		// []
+		node.ptr->next = _head;
+		while (_head.compare_exchange_weak(node.ptr->next, node) == false)
 		{
-			// Live Lock 가능성
-			// 운이 나쁘면 어떤 쓰레드가 계속 통과를 못하는 경우가 생김
+
 		}
 	}
 
-	// concurrency in action 에선 bool이 아닌 shared_ptr로 예외 처리
-	bool TryPop(T& value)
+	shared_ptr<T> TryPop()
 	{
-		++_popCount;
+		CountedNodePtr oldHead = _head;
 
-		Node* oldHead = _head;
-
-		while (oldHead && _head.compare_exchange_weak(oldHead, oldHead->next) == false)
+		while (true)
 		{
+			// 참조할 수 있는가? 현 시점 기준 +1 값을 가진 객체가 참조
+			IncreaseHeadCount(oldHead);
 
-		}
-
-		if (oldHead == nullptr)
-		{
-			--_popCount;
-			return false;
-		}
-
-		value = oldHead->data;
-
-		TryDelete(oldHead);
-
-		return true;
-	}
-
-	// 1) data 분리
-	// 2) count 체크
-	// 3) 혼자면 삭제
-	void TryDelete(Node* oldHead)
-	{
-		// 나 외에 누가 있는지
-		if (_popCount == 1)
-		{
-			Node* node = _pendingList.exchange(nullptr);
-
-			if (--_popCount == 0)
+			Node* ptr = oldHead.ptr;
+			if (ptr == nullptr)
 			{
-				DeleteNodes(node);
+				return shared_ptr<T>();
 			}
 
-			else if (node)
+			// 소유할 수 있는가? (여러 객체가 참조할 가능성이 있으니 소유하는 객체를 결정)
+			if(_head.compare_exchange_strong(oldHead, ptr->next))
 			{
-				// 누군가 끼어들었으니 다시 돌려놓기
-				ChainPendingNodeList(node);
+				shared_ptr<T> res;
+				res.swap(ptr->data);
+
+				// 참조 객체가 1개뿐인가?
+				const int32 countIncrease = oldHead.externalCount - 2;
+				if (ptr->internalCount.fetch_add(countIncrease) == -countIncrease)
+				{
+					delete ptr;
+				}
+
+				return res;
 			}
 
-			delete oldHead;
-		}
-
-		else
-		{
-			ChainPendingNode(oldHead);
-			--_popCount;
+			// 참조 O, 소유 x 
+			else if(ptr->internalCount.fetch_sub(1) == 1)
+			{
+				delete ptr;
+			}
 		}
 	}
 
-	void ChainPendingNodeList(Node* first, Node* last)
-	{
-		last->next = _pendingList;
 
-		while (_pendingList.compare_exchange_weak(last->next, first) == false)
+private:
+	void IncreaseHeadCount(CountedNodePtr& oldCounter)
+	{
+		while (true)
 		{
+			CountedNodePtr newCounter = oldCounter;
+			newCounter.externalCount++;
 
-		}
-	}
-
-	void ChainPendingNodeList(Node* node)
-	{
-		Node* last = node;
-
-		while (last->next)
-		{
-			last = last->next;
-		}
-
-		ChainPendingNodeList(node, last);
-	}
-
-	void ChainPendingNode(Node* node)
-	{
-		ChainPendingNodeList(node, node);
-	}
-
-	static void DeleteNodes(Node* node)
-	{
-		while (node)
-		{
-			Node* next = node->next;
-			delete node;
-			node = next;
+			if (_head.compare_exchange_strong(oldCounter, newCounter))
+			{
+				oldCounter.externalCount = newCounter.externalCount;
+				break;
+			}
 		}
 	}
 
 private:
-
-	atomic<Node*> _head;
-	atomic<uint32> _popCount = 0;
-	atomic<Node*> _pendingList;
+	atomic<CountedNodePtr> _head;
 };

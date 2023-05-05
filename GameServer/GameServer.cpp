@@ -26,17 +26,20 @@ void Pop()
 {
 	while (true)
 	{
-		int32 data = 0;
+		auto data = s.TryPop();
 
-		if (s.TryPop(OUT data))
+		if (data != nullptr)
 		{
-			cout << data << endl;
+			cout << *(data) << endl;
 		}
 	}
 }
 
 int main()
 {
+	shared_ptr<int32> ptr;
+	bool value = atomic_is_lock_free(&ptr);
+
 	thread t1(Push);
 	thread t2(Pop);
 	thread t3(Pop);
