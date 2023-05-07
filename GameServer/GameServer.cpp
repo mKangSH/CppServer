@@ -8,43 +8,88 @@
 #include "ConcurrentQueue.h"
 #include "ConcurrentStack.h"
 
-LockFreeQueue<int32> q;
-LockFreeStack<int32> s;
+// 소수 구하기
+const int32 MAX_NUMBER = 1'000'000;
+mutex m;
+vector<bool> primeNumbers(MAX_NUMBER + 1, true);
 
-void Push()
+void IsPrime(int start, int end)
 {
-	while (true)
+	for (uint64 number = start; number <= end; number++)
 	{
-		int32 value = rand() % 100;
-		s.Push(value);
-
-		this_thread::sleep_for(1ms);
-	}
-}
-
-void Pop()
-{
-	while (true)
-	{
-		auto data = s.TryPop();
-
-		if (data != nullptr)
+		for (uint64 j = number * number; j <= MAX_NUMBER; j += number)
 		{
-			cout << *(data) << endl;
+			primeNumbers[j] = false;
 		}
 	}
 }
 
+int CountPrimeNumber(int start, int end)
+{
+	int count = 0;
+	for (int i = start; i < end; i++)
+	{
+		if (primeNumbers[i])
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
 int main()
 {
-	shared_ptr<int32> ptr;
-	bool value = atomic_is_lock_free(&ptr);
+	vector<thread> threads;
 
-	thread t1(Push);
-	thread t2(Pop);
-	thread t3(Pop);
+	int coreCount = thread::hardware_concurrency();
+	int jobCount = (sqrt(MAX_NUMBER) / coreCount) + 1;
 
-	t1.join();
-	t2.join();
-	t3.join();
+	for (int i = 0; i < coreCount; i++)
+	{
+		int start = (i * jobCount);
+		int end = min(MAX_NUMBER, ((i + 1) * jobCount));
+
+		if (i == 0)
+		{
+			start = 2;
+		}
+
+		threads.push_back(thread([start, end]()
+			{
+				IsPrime(start, end);
+			}
+		));
+	}
+
+	for (thread& t : threads)
+	{
+		t.join();
+	}
+
+	jobCount = (MAX_NUMBER / coreCount) + 1;
+	int primeCount = 0;
+	for (int i = 0; i < coreCount; i++)
+	{
+		int start = (i * jobCount);
+		int end = min(MAX_NUMBER, ((i + 1) * jobCount));
+
+		if (i == 0)
+		{
+			start = 2;
+		}
+
+		threads[i] = thread([start, end, &primeCount]()
+			{
+				primeCount += CountPrimeNumber(start, end);
+			}
+		);
+	}
+
+	for (thread& t : threads)
+	{
+		t.join();
+	}
+
+	cout << primeCount << endl;
 }
