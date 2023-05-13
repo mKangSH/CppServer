@@ -3,93 +3,82 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include <future>
 #include <Windows.h>
-#include "ConcurrentQueue.h"
-#include "ConcurrentStack.h"
+#include <future>
 
-// 소수 구하기
-const int32 MAX_NUMBER = 1'000'000;
-mutex m;
-vector<bool> primeNumbers(MAX_NUMBER + 1, true);
+#include "RefCounting.h"
 
-void IsPrime(int start, int end)
+class Wraith : public RefCountable
 {
-	for (uint64 number = start; number <= end; number++)
-	{
-		for (uint64 j = number * number; j <= MAX_NUMBER; j += number)
-		{
-			primeNumbers[j] = false;
-		}
-	}
-}
+public:
+	int _hp = 150;
+	int _posX = 0;
+	int _posY = 0;
+	int _armor = 1;
+};
 
-int CountPrimeNumber(int start, int end)
+using WraithRef = TSharedPtr<Wraith>;
+
+class Missile : public RefCountable
 {
-	int count = 0;
-	for (int i = start; i < end; i++)
+public:
+	void SetTarget(WraithRef target)
 	{
-		if (primeNumbers[i])
-		{
-			count++;
-		}
+		_target = target;
+
+		// reference count: 3 확인용 임시 중단 변수
+		int i = 32;
 	}
 
-	return count;
-}
+	bool Update()
+	{
+		if (_target == nullptr)
+		{
+			return true;
+		}
+
+		int posX = _target->_posX;
+		int posY = _target->_posY;
+
+		if (_target->_hp == 0)
+		{
+			_target->ReleaseRef();
+			_target = nullptr;
+			return true;
+		}
+
+		return false;
+	}
+
+private:
+	WraithRef _target = nullptr;
+};
+
+using MissileRef = TSharedPtr<Missile>;
 
 int main()
 {
-	vector<thread> threads;
+	WraithRef wraith(new Wraith());
+	MissileRef missile(new Missile());
 
-	int coreCount = thread::hardware_concurrency();
-	int jobCount = (sqrt(MAX_NUMBER) / coreCount) + 1;
+ 	missile->SetTarget(wraith);
+	wraith->_hp = 0;
 
-	for (int i = 0; i < coreCount; i++)
+	if(wraith->_hp == 0)
 	{
-		int start = (i * jobCount);
-		int end = min(MAX_NUMBER, ((i + 1) * jobCount));
+		// wraith = WraithRef(nullptr);
+		wraith = nullptr;
+	}
 
-		if (i == 0)
+	while (true)
+	{
+		if (missile)
 		{
-			start = 2;
-		}
-
-		threads.push_back(thread([start, end]()
+			if (missile->Update())
 			{
-				IsPrime(start, end);
+				missile->ReleaseRef();
+				missile = nullptr;
 			}
-		));
-	}
-
-	for (thread& t : threads)
-	{
-		t.join();
-	}
-
-	jobCount = (MAX_NUMBER / coreCount) + 1;
-	int primeCount = 0;
-	for (int i = 0; i < coreCount; i++)
-	{
-		int start = (i * jobCount);
-		int end = min(MAX_NUMBER, ((i + 1) * jobCount));
-
-		if (i == 0)
-		{
-			start = 2;
 		}
-
-		threads[i] = thread([start, end, &primeCount]()
-			{
-				primeCount += CountPrimeNumber(start, end);
-			}
-		);
 	}
-
-	for (thread& t : threads)
-	{
-		t.join();
-	}
-
-	cout << primeCount << endl;
 }
