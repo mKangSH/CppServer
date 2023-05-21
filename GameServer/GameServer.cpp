@@ -8,77 +8,84 @@
 
 #include "RefCounting.h"
 
-class Wraith : public RefCountable
+class Wraith
 {
 public:
+	Wraith()
+	{
+
+	}
+
+	~Wraith()
+	{
+
+	}
+
+	static void* operator new(size_t size)
+	{
+		// new delete 타이밍 intercept 가능
+		cout << "Wraith new 실행! 크기: " << size << "bytes." << endl;
+		void* ptr = ::malloc(size);
+		return ptr;
+	}
+
+	static void operator delete(void* ptr)
+	{
+		cout << "Wraith delete 실행!" << endl;
+		::free(ptr);
+	}
+
+
 	int _hp = 150;
 	int _posX = 0;
 	int _posY = 0;
 	int _armor = 1;
 };
 
-using WraithRef = TSharedPtr<Wraith>;
+// new operator overloading (Global)
 
-class Missile : public RefCountable
-{
-public:
-	void SetTarget(WraithRef target)
-	{
-		_target = target;
-
-		// reference count: 3 확인용 임시 중단 변수
-		int i = 32;
-	}
-
-	bool Update()
-	{
-		if (_target == nullptr)
-		{
-			return true;
-		}
-
-		int posX = _target->_posX;
-		int posY = _target->_posY;
-
-		if (_target->_hp == 0)
-		{
-			_target->ReleaseRef();
-			_target = nullptr;
-			return true;
-		}
-
-		return false;
-	}
-
-private:
-	WraithRef _target = nullptr;
-};
-
-using MissileRef = TSharedPtr<Missile>;
+//void* operator new(size_t size)
+//{
+//	// new delete 타이밍 intercept 가능
+//	cout << "new 실행! 크기: " << size << "bytes." << endl;
+//	void* ptr = ::malloc(size);
+//	return ptr;
+//}
+//
+//void operator delete(void* ptr)
+//{
+//	cout << "Delete 실행!" << endl;
+//	::free(ptr);
+//}
+//
+//void* operator new[](size_t size)
+//{
+//	cout << "new[] 실행! 크기: " << size << "bytes." << endl;
+//	void* ptr = ::malloc(size);
+//	return ptr;
+//}
+//
+//void operator delete[](void* ptr)
+//{
+//	cout << "delete[] 실행!" << endl;
+//	::free(ptr);
+//}
 
 int main()
 {
-	WraithRef wraith(new Wraith());
-	MissileRef missile(new Missile());
+	// shared_ptr<Wraith> spr = make_shared<Wraith>();
+	// weak_ptr<Wraith> wpr = spr;
 
- 	missile->SetTarget(wraith);
-	wraith->_hp = 0;
+	// bool expired = wpr.expired(); // 존재?
+	
+	// if expired == true
+	// spr = wpr;
 
-	if(wraith->_hp == 0)
-	{
-		// wraith = WraithRef(nullptr);
-		wraith = nullptr;
-	}
+	// shared_ptr<Wraith> spr2 = wpr.lock();
+	// if spr2 != nullptr
+	// {}
 
-	while (true)
-	{
-		if (missile)
-		{
-			if (missile->Update())
-			{
-				missile->ReleaseRef();
-				missile = nullptr;
-			}
-		}
-	}
+	Wraith* w1 = new Wraith();
+
+	delete w1;
 }
