@@ -1,11 +1,13 @@
 #pragma once
 #include "Allocator.h"
 
+// Memory pooling 등의 기법을 적용하기 위한 인터페이스
+
 // typename... : variadic template
 template<typename Type, typename... Args>
 Type* xnew(Args&&... args)
 {
-	Type* memory = static_cast<Type*>(BaseAllocator::Alloc(sizeof(Type)));
+	Type* memory = static_cast<Type*>(xalloc(sizeof(Type)));
 
 	// placement new
 	// 메모리 위에 객체 생성자를 올리는 문법
@@ -22,5 +24,5 @@ void xdelete(Type* obj)
 	obj->~Type();
 
 	// 메모리 반납
-	BaseAllocator::Release(obj);
+	xrelease(obj);
 }
