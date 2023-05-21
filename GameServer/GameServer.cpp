@@ -7,33 +7,39 @@
 #include <future>
 
 #include "RefCounting.h"
+#include "Memory.h"
 
 class Wraith
 {
 public:
 	Wraith()
 	{
+		cout << "Wraith 생성! " << endl;
+	}
 
+	Wraith(int hp) : _hp(hp)
+	{
+		cout << "Hp: " << hp << " Wraith 생성! " << endl;
 	}
 
 	~Wraith()
 	{
-
+		cout << "Wraith 소멸! " << endl;
 	}
 
-	static void* operator new(size_t size)
-	{
-		// new delete 타이밍 intercept 가능
-		cout << "Wraith new 실행! 크기: " << size << "bytes." << endl;
-		void* ptr = ::malloc(size);
-		return ptr;
-	}
+	//static void* operator new(size_t size)
+	//{
+	//	// new delete 타이밍 intercept 가능
+	//	cout << "Wraith new 실행! 크기: " << size << "bytes." << endl;
+	//	void* ptr = ::malloc(size);
+	//	return ptr;
+	//}
 
-	static void operator delete(void* ptr)
-	{
-		cout << "Wraith delete 실행!" << endl;
-		::free(ptr);
-	}
+	//static void operator delete(void* ptr)
+	//{
+	//	cout << "Wraith delete 실행!" << endl;
+	//	::free(ptr);
+	//}
 
 
 	int _hp = 150;
@@ -85,7 +91,7 @@ int main()
 	// if spr2 != nullptr
 	// {}
 
-	Wraith* w1 = new Wraith();
+	Wraith* w1 = xnew<Wraith>(100);
 
-	delete w1;
+	xdelete(w1);
 }
