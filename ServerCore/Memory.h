@@ -7,7 +7,7 @@
 template<typename Type, typename... Args>
 Type* xnew(Args&&... args)
 {
-	Type* memory = static_cast<Type*>(xalloc(sizeof(Type)));
+	Type* memory = static_cast<Type*>(xAlloc(sizeof(Type)));
 
 	// placement new
 	// 메모리 위에 객체 생성자를 올리는 문법
@@ -24,5 +24,5 @@ void xdelete(Type* obj)
 	obj->~Type();
 
 	// 메모리 반납
-	xrelease(obj);
+	xRelease(obj);
 }
