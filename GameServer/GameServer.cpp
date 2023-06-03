@@ -10,91 +10,41 @@
 #include "Memory.h"
 #include "ThreadManager.h"
 
-class Wraith
+class Player
 {
 public:
-	Wraith()
-	{
-		cout << "Wraith 생성! " << endl;
-	}
-
-	Wraith(int hp) : _hp(hp)
-	{
-		cout << "Hp: " << hp << " Wraith 생성! " << endl;
-	}
-
-	~Wraith()
-	{
-		cout << "Wraith 소멸! " << endl;
-	}
-
-
-	//static void* operator new(size_t size)
-	//{
-	//	// new delete 타이밍 intercept 가능
-	//	cout << "Wraith new 실행! 크기: " << size << "bytes." << endl;
-	//	void* ptr = ::malloc(size);
-	//	return ptr;
-	//}
-
-	//static void operator delete(void* ptr)
-	//{
-	//	cout << "Wraith delete 실행!" << endl;
-	//	::free(ptr);
-	//}
-
-
-	int _hp = 150;
-	int _posX = 0;
-	int _posY = 0;
-	int _armor = 1;
+	Player() {}
+	virtual ~Player() {}
 };
 
-// new operator overloading (Global)
+class Knight : public Player
+{
+public:
+	Knight()
+	{
+		cout << "Knight()" << endl;
+	}
 
-//void* operator new(size_t size)
-//{
-//	// new delete 타이밍 intercept 가능
-//	cout << "new 실행! 크기: " << size << "bytes." << endl;
-//	void* ptr = ::malloc(size);
-//	return ptr;
-//}
-//
-//void operator delete(void* ptr)
-//{
-//	cout << "Delete 실행!" << endl;
-//	::free(ptr);
-//}
-//
-//void* operator new[](size_t size)
-//{
-//	cout << "new[] 실행! 크기: " << size << "bytes." << endl;
-//	void* ptr = ::malloc(size);
-//	return ptr;
-//}
-//
-//void operator delete[](void* ptr)
-//{
-//	cout << "delete[] 실행!" << endl;
-//	::free(ptr);
-//}
+	Knight(int32 hp) : _hp(hp)
+	{
+		cout << "Knight(hp)" << endl;
+	}
+
+	~Knight()
+	{
+		cout << "~Knight()" << endl;
+	}
+
+	int _hp = 100;
+	int _mp = 10;
+};
 
 int main()
 {
-	// shared_ptr<Wraith> spr = make_shared<Wraith>();
-	// weak_ptr<Wraith> wpr = spr;
+	Knight* knight = (Knight*)xnew<Player>();
 
-	// bool expired = wpr.expired(); // 존재?
-	
-	// if expired == true
-	// spr = wpr;
+	// Memory Overflow 강제 발생
+	knight->_hp = 100;
 
-	// shared_ptr<Wraith> spr2 = wpr.lock();
-	// if spr2 != nullptr
-	// {}
-
-	Wraith* w1 = xnew<Wraith>(100);
-
-	xdelete(w1);
-	
+	xdelete(knight);
 }
