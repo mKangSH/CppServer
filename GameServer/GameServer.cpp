@@ -9,54 +9,65 @@
 #include "ThreadManager.h"
 #include "Allocator.h"
 #include "Memory.h"
+#include "LockFreeStack.h"
 
+// CoreGlobal 객체 생성
 CoreGlobal GCoreGlobal;
 
-class Player
+// 실질적인 코드 작성부
+DECLSPEC_ALIGN(16)
+class Data // : public SListEntry
 {
 public:
-	Player() {}
-	virtual ~Player() {}
+	SListEntry _entry;
+
+	int64 _rand = rand() % 1000;
 };
 
-class Knight : public Player
-{
-public:
-	Knight()
-	{
-		cout << "Knight()" << endl;
-	}
-
-	Knight(int32 hp) : _hp(hp)
-	{
-		cout << "Knight(hp)" << endl;
-	}
-
-	~Knight()
-	{
-		cout << "~Knight()" << endl;
-	}
-
-	int _hp = 100;
-	int _mp = 10;
-};
+SListHeader* GHeader;
 
 int main()
 {
-	int32 knightSize = sizeof(Knight);
+	GHeader = new SListHeader();
+	ASSERT_CRASH(((uint64)GHeader % 16) == 0);
+	InitializeHead(GHeader);
 
-	for (int32 i = 0; i < 5; i++)
+	for (int32 i = 0; i < 3; i++)
 	{
 		GThreadManager->Launch([]()
 			{
 				while (true)
 				{
-					xVector<Knight> v(10);
+					Data* data = new Data();
 
-					xMap<int32, Knight> m;
-					m[100] = Knight();
+					// Align malloc 하는 방법도 있음
+					ASSERT_CRASH(((uint64)GHeader % 16) == 0);
 
+					PushEntrySList(GHeader, (SListEntry*)data);
 					this_thread::sleep_for(10ms);
+				}
+			});
+	}
+
+	for (int32 i = 0; i < 2; i++)
+	{
+		GThreadManager->Launch([]()
+			{
+				while (true)
+				{
+					Data* pop = nullptr;
+					pop = (Data*)PopEntrySList(GHeader);
+
+					if (pop)
+					{
+						cout << pop->_rand << endl;
+						delete pop;
+					}
+
+					else
+					{
+						cout << "NONE" << endl;
+					}
 				}
 			});
 	}
