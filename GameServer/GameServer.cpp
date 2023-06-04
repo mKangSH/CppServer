@@ -10,6 +10,8 @@
 #include "Memory.h"
 #include "ThreadManager.h"
 
+CoreGlobal GCoreGlobal;
+
 int main()
 {
 	
