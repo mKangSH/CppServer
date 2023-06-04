@@ -9,6 +9,7 @@
 #include "RefCounting.h"
 #include "Memory.h"
 #include "ThreadManager.h"
+#include "Allocator.h"
 
 class Player
 {
@@ -41,10 +42,8 @@ public:
 
 int main()
 {
-	Knight* knight = (Knight*)xnew<Player>();
+	xVector<Knight> v(100);
 
-	// Memory Overflow 강제 발생
-	knight->_hp = 100;
-
-	xdelete(knight);
+	xMap<int32, Knight> m;
+	m[100] = Knight();
 }
