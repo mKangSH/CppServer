@@ -15,7 +15,7 @@ ThreadManager::~ThreadManager()
 
 void ThreadManager::Launch(function<void(void)> callback)
 {
-	LockGuard guard(_lock);
+	LockGuard guard(_locks);
 
 	_threads.push_back(thread([=]()
 		{

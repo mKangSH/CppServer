@@ -6,10 +6,11 @@
 #include <Windows.h>
 #include <future>
 
-#include "RefCounting.h"
-#include "Memory.h"
 #include "ThreadManager.h"
 #include "Allocator.h"
+#include "Memory.h"
+
+CoreGlobal GCoreGlobal;
 
 class Player
 {
@@ -42,8 +43,23 @@ public:
 
 int main()
 {
-	xVector<Knight> v(100);
+	int32 knightSize = sizeof(Knight);
 
-	xMap<int32, Knight> m;
-	m[100] = Knight();
+	for (int32 i = 0; i < 5; i++)
+	{
+		GThreadManager->Launch([]()
+			{
+				while (true)
+				{
+					xVector<Knight> v(10);
+
+					xMap<int32, Knight> m;
+					m[100] = Knight();
+
+					this_thread::sleep_for(10ms);
+				}
+			});
+	}
+
+	GThreadManager->Join();
 }
