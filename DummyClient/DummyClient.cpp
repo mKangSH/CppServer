@@ -10,8 +10,6 @@
 // WSAStartup <=> WSACleanup
 int main()
 {
-	// Initialize ws2_32 Library
-	// 관련 정보가 wsaData에 채워짐
 	WSAData wsaData;
 	if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 	{
@@ -19,13 +17,9 @@ int main()
 		::WSACleanup();
 	}
 
-	// tcp => Socket 유실 시 프로토콜 단에서 따로 작업 없이 재전송 및 데이터 오염 체크
-	// udp => 빠른 전송 유실 체크 x
+	// TCP 서버는 Recv Buffer 전체를 읽어 Data 시작과 끝 부분을 알 수 없음 
+	// => Packet 으로 데이터를 전송하여 시작과 끝을 알림
 
-	// ad : Address Family (AF_INET = IPv4, AF_INET6 = IPv6)
-	// type : TCP(SOCK_STERAM) vs UDP(SOCK_DGRAM)
-	// protocol : 0
-	// return : descriptor
 	SOCKET clientSocket = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (clientSocket == INVALID_SOCKET)
 	{
@@ -41,13 +35,7 @@ int main()
 	SOCKADDR_IN serverAddr; // IPv4
 	::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
-
-	// htons = host(local computer) to network short
-	// Endian 이슈 때문에 사용 => Big-Endian(network) vs Little-Endian
-	serverAddr.sin_port = ::htons(7777); // 80 : HTTP etc..
-	
-	// Server Address => DNS 교체
-	// serverAddr.sin_addr.s_addr = ::inet_addr("127.0.0.1") << deprecated;
+	serverAddr.sin_port = ::htons(7777);
 	::inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr); 
 
 	// 실질적인 연결 시도부
@@ -62,11 +50,41 @@ int main()
 
 	// ============================== //
 	// 연결 성공 ! 데이터 송수신 가능 !
+
 	cout << "Connected To Server!" << endl;
 
 	while (true)
 	{
 		// TODO 
+		char sendBuffer[100] = "Hello World!";
+
+		// send, recv => Blocking Function
+		// send => kernal Level Send buffer가 꽉 찼을 때 block
+		// recv => kernal Level Recv buffer가 꽉 찼을 때 block
+		int32 resultCode = ::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0);
+		if (resultCode == SOCKET_ERROR)
+		{
+			int32 errCode = ::WSAGetLastError();
+			cout << "Send ErrorCode : " << errCode << endl;
+			::WSACleanup();
+			return -1;
+		}
+
+		cout << "Send Data! Len = " << sizeof(sendBuffer) << endl;
+
+		char recvBuffer[1000];
+
+		int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+		if (recvLen <= 0)
+		{
+			int32 errCode = ::WSAGetLastError();
+			cout << "Recv ErrorCode : " << errCode << endl;
+			::WSACleanup();
+			return -1;
+		}
+
+		cout << "Recv Data! Data = " << recvBuffer << endl;
+		cout << "Recv Data! Len = " << recvLen << endl;
 
 		this_thread::sleep_for(1s);
 	}
