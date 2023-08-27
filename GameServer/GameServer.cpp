@@ -17,6 +17,12 @@
 CoreGlobal GCoreGlobal;
 
 // 실질적인 코드 작성부
+void HandleError(const char* cause)
+{
+	int32 errCode = ::WSAGetLastError();
+	cout << cause << "ErrorCode : " << errCode << endl;
+	::WSACleanup();
+}
 
 int main()
 {
@@ -26,99 +32,58 @@ int main()
 	if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 	{
 		return -1;
-		::WSACleanup();
 	}
 
-	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
-	if (listenSocket == INVALID_SOCKET)
+	SOCKET serverSocket = ::socket(AF_INET, SOCK_DGRAM, 0);
+	if (serverSocket == INVALID_SOCKET)
 	{
-		// Log Viewer 제작 후 Log 띄우기
-		int32 errCode = ::WSAGetLastError();
-		cout << "Socket ErrorCode : " << errCode << endl;
-		::WSACleanup();
+		HandleError("Socket");
 		return -1;
 	}
 
 	SOCKADDR_IN serverAddr; // IPv4
 	::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = ::htons(7777); // 80 : HTTP etc..
-	serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
+	serverAddr.sin_port = ::htons(7777);
+	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if(::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
+	if (::bind(serverSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
 	{
-		// Log Viewer 제작 후 Log 띄우기
-		int32 errCode = ::WSAGetLastError();
-		cout << "Bind ErrorCode : " << errCode << endl;
-		::WSACleanup();
+		HandleError("Bind");
 		return -1;
 	}
-
-	const int backLog = 10; // 대기열 Capacity
-	if (::listen(listenSocket, backLog) == SOCKET_ERROR)
-	{
-		// Log Viewer 제작 후 Log 띄우기
-		int32 errCode = ::WSAGetLastError();
-		cout << "Listen ErrorCode : " << errCode << endl;
-		::WSACleanup();
-		return -1;
-	}
-
-	// ================================================
-	// Data 송수신 시작!
 
 	while (true)
 	{
-		SOCKADDR_IN clientAddr; // IPv4 IP Ban 등에 사용하게 될 중요한 정보!
-		::memset(&clientAddr, 0, sizeof(serverAddr));
-		int32 addrLen = sizeof(clientAddr);
+		SOCKADDR_IN clientAddr;
+		::memset(&clientAddr, 0, sizeof(clientAddr));
+		int32 clientAddrLen = sizeof(clientAddr);
 
-		SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-		if (clientSocket == INVALID_SOCKET)
+		char recvBuffer[1000];
+		int32 recvLen = ::recvfrom(serverSocket, recvBuffer, sizeof(recvBuffer), 0,
+								(SOCKADDR*)&clientAddr, &clientAddrLen);
+
+		if (recvLen <= 0)
 		{
-			// Log Viewer 제작 후 Log 띄우기
-			int32 errCode = ::WSAGetLastError();
-			cout << "Accept ErrorCode : " << errCode << endl;
-			::WSACleanup();
+			HandleError("RecvFrom");
+			return 0;
+		}
+
+		cout << "Recv Data! Data = " << recvBuffer << endl;
+		cout << "Recv Data! Len = " << recvLen << endl;
+		
+		int32 errCode = ::sendto(serverSocket, recvBuffer, recvLen, 0,
+							(SOCKADDR*)&clientAddr, sizeof(clientAddr));
+
+		if (errCode == SOCKET_ERROR)
+		{
+			HandleError("SendTo");
 			return -1;
 		}
 
-		// client Data 수신 완료!
-		
-		// IP 찍어보고 싶다!
-		char ipAddress[16];
-		::inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
-		cout << "Client Entry! IP = " << ipAddress << endl;
-
-		// TODO
-		while (true)
-		{
-			char recvBuffer[1000];
-
-			int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
-			if (recvLen <= 0)
-			{
-				int32 errCode = ::WSAGetLastError();
-				cout << "Recv ErrorCode : " << errCode << endl;
-				::WSACleanup();
-				return -1;
-			}
-
-			cout << "Recv Data! Data = " << recvBuffer << endl;
-			cout << "Recv Data! Len = " << recvLen << endl;
-
-			int32 resultCode = ::send(clientSocket, recvBuffer, recvLen, 0);
-			if (resultCode == SOCKET_ERROR)
-			{
-				int32 errCode = ::WSAGetLastError();
-				cout << "Send ErrorCode : " << errCode << endl;
-				::WSACleanup();
-				return -1;
-			}
-		}
+		cout << "Send Data! Data = " << recvBuffer << endl;
+		cout << "Send Data! Len : " << recvLen << endl;
 	}
-
-	// ===============================================
 
 	// WinSock 종료
 	::WSACleanup();
