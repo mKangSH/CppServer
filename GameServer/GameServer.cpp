@@ -13,6 +13,8 @@
 // 매우 중요
 #pragma comment(lib, "ws2_32.lib")
 
+#include "Memory.h"
+
 // CoreGlobal 객체 생성
 CoreGlobal GCoreGlobal;
 
@@ -28,18 +30,55 @@ const int32 BUFSIZE = 1000;
 
 struct Session
 {
-	WSAOVERLAPPED overlapped = {};
 	SOCKET socket = INVALID_SOCKET;
 	char recvBuffer[BUFSIZE] = {};
 	int32 recvBytes = 0;
 };
 
-void CALLBACK RecvCallback(DWORD error, DWORD recvLen, LPWSAOVERLAPPED overlapped, DWORD flags)
+enum IO_TYPE
 {
-	cout << "Data Recv Len Callback = " << recvLen << endl;
-	// TODO : ex) 에코 서버를 만든다면 WSASend();
+	READ,
+	WRITE,
+	ACCEPT,
+	CONNECT,
+};
 
-	Session* session = (Session*)overlapped;
+struct OverlappedEx
+{
+	WSAOVERLAPPED overlapped = {};
+	int32 type = 0; // read, write, accept, connect, ...
+};
+
+void WorkerThreadMain(HANDLE iocpHandle)
+{
+	while (true)
+	{
+		DWORD bytesTransferred = 0;
+		Session* session = nullptr;
+		OverlappedEx* overlappedEx = nullptr;
+
+		BOOL ret = ::GetQueuedCompletionStatus(iocpHandle, &bytesTransferred,
+			(ULONG_PTR*)&session, (LPOVERLAPPED*)&overlappedEx, INFINITE);
+
+		if (ret == FALSE || bytesTransferred == 0)
+		{
+			// TODO : 연결 끊김
+			continue;
+		}
+
+		ASSERT_CRASH(overlappedEx->type == IO_TYPE::READ);
+
+		cout << "Recv Data IOCP = " << bytesTransferred << endl;
+
+		WSABUF wsaBuf;
+		wsaBuf.buf = session->recvBuffer;
+		wsaBuf.len = BUFSIZE;
+
+		DWORD recvLen = 0;
+		DWORD flags = 0;
+
+		::WSARecv(session->socket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
+	}
 }
 
 int main()
@@ -52,12 +91,6 @@ int main()
 
 	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (listenSocket == INVALID_SOCKET)
-	{
-		return -1;
-	}
-
-	u_long on = 1;
-	if (::ioctlsocket(listenSocket, FIONBIO, &on) == INVALID_SOCKET)
 	{
 		return -1;
 	}
@@ -81,105 +114,80 @@ int main()
 	cout << "Accept!" << endl;
 	
 	// Overlapped Model (Completion Routine 콜백 기반)
-	// - 비동기 입출력 지원하는 소켓 생성
-	// - 비동기 입출력 함수 호출(완료 루틴의 시작 주소를 넘겨준다.)
-	// - 비동기 작업이 바로 완료되지 않는 경우 WSA_IO_PENDING 오류 코드
-	// - 비동기 입출력 함수 호출한 쓰레드를 ->Alertable Wait 상태로 만든다.
-	// ex) WaitForSingleObject, WaitForMultipleObjectEx, SleepEx, WSAWaitForMultipleEvents
-	// - 비동기 IO 완료되면, 운영체제는 완료 루틴 호출 (C#에서는 비동기 작업이 완료되면 운영체제가 Thread pool에 있는 Thread를 호출해서 완료)
-	// - 완료 루틴 호출이 완료되면, 쓰레드는 Alertable Wait 상태에서 빠져나온다.
-	// Lock 상황에서 비동기 IO Callback이 호출되면 ??
+	// - 비동기 입출력 함수가 완료되면, 쓰레드마다 있는 APC 큐에 일감이 쌓임
+	// - Alertable Wait 상태로 들어가서 APC 큐 비우기(콜백 함수)
+	// 단점 ) APC 큐 쓰레드마다 있다. Alertable Wait 자체도 부담!
+	// 이벤트 방식 단점 ) 소켓 이벤트 1:1 대응
+
+	// IOCP (Completion Port) 모델
+	// - APC -> Completion Port (전체적으로 1개 중앙에서 관리하는 APC큐 !!느낌!!)
+	// - Alertable Wait -> CP 결과 처리를 GetQueuedCompletionStatus
+	// - 멀티쓰레드 호환성이 좋다.
+
+	// CreateIoCompletionPort : CP 생성, 소켓 등록
+	// GetQueuedCompletionStatus
 	
-	// 1) 오류 발생 시 0이 아닌 값
-	// 2) 전송 바이트 수
-	// 3) 비동기 입출력 함수 호출 시 넘겨준 WSAOVERLAPPED 구조체의 주소값
-	// 4) 0
-	// void CompletionRoutine()
+	vector<Session*> sessionManager;
 
-	// Select 모델
-	// - 장점) 윈도우/리눅스 공통(Cross Platform)
-	// - 단점) 성능 최하 (매번 소켓을 등록하는 비용), 64개 제한
-	// WSAAsyncSelect 모델 = 소켓 이벤트를 윈도우 메시지 형태로 처리(일반 윈도우 메시지랑 같이 처리하니 성능 --)
-	// WSAEventSelect 모델
-	// - 장점) 비교적 뛰어난 성능
-	// - 단점) 64개 제한
-	// Overlapped (이벤트 기반)
-	// - 장점) 성능
-	// - 단점) 64개 제한
-	// Overlapped (콜백 기반)
-	// - 장점) 성능
-	// - 단점) 모든 비동기 소켓 함수에서 사용 가능하진 않음(Accept 등), 빈번한 Alertable Wait으로 인한 성능 저하
-	// IOCP
+	// CP 생성
+	HANDLE iocpHandle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 
-	// Reactor Pattern (-뒤늦게, Non-Blocking 소켓, 소켓 상태 확인 후 -> 뒤늦게 호출)
-	// Proactor Pattern (-미리, Overlapped WSA~ 걸어놓고 알아서 처리하게 한다)
+	// WorkerThreads
+	for (int32 i = 0; i < 5; i++)
+	{
+		GThreadManager->Launch([=]() { WorkerThreadMain(iocpHandle); });
+	}
 
+	// Main Thread = Accept 담당
 	while (true)
 	{
 		SOCKADDR_IN clientAddr;
 		int32 addrLen = sizeof(clientAddr);
 
-		SOCKET clientSocket;
-		while (true)
+		SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+		if (clientSocket == INVALID_SOCKET)
 		{
-			clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-
-			if (clientSocket != INVALID_SOCKET)
-			{
-				break;
-			}
-
-			if (::WSAGetLastError() == WSAEWOULDBLOCK)
-			{
-				continue;
-			}
-
-			// 문제 발생!
-			return 0;
+			HandleError("Invalid Socket!!");
+			return -1;
 		}
 
-		Session session = Session{ clientSocket };
-		//WSAEVENT wsaEvent = ::WSACreateEvent();
+		Session* session = xnew<Session>();
+		session->socket = clientSocket;
+		sessionManager.push_back(session);
 
 		cout << "Client Connected!" << endl;
+		
+		// 소켓을 CP에 등록
+		::CreateIoCompletionPort((HANDLE)clientSocket, iocpHandle, /*Key*/(ULONG_PTR)session, 0);
 
-		// recvBuffer, overlapped 값은 동작이 완전히 끝날 때까지 건드리지 말아야 한다! 데이터 오염!
-		while (true)
-		{
-			WSABUF wsaBuf;
-			wsaBuf.buf = session.recvBuffer;
-			wsaBuf.len = BUFSIZE;
+		WSABUF wsaBuf;
+		wsaBuf.buf = session->recvBuffer;
+		wsaBuf.len = BUFSIZE;
 
-			DWORD recvLen = 0;
-			DWORD flags = 0;
-			if (::WSARecv(clientSocket, &wsaBuf, 1, &recvLen, &flags, &session.overlapped, RecvCallback) == SOCKET_ERROR)
-			{
-				if (::WSAGetLastError() == WSA_IO_PENDING)
-				{
-					// Pending
-					// Alertable Wait (APC)
+		OverlappedEx* overlappedEx = new OverlappedEx();
+		overlappedEx->type = IO_TYPE::READ;
 
-					::SleepEx(INFINITE, TRUE);
-					// ::WSAWaitForMultipleEvents(1, &wsaEvent, TRUE, WSA_INFINITE, TRUE);
-				}
+		DWORD recvLen = 0;
+		DWORD flags = 0;
+		::WSARecv(clientSocket, &wsaBuf, 1, &recvLen, &flags, &overlappedEx->overlapped, NULL);
 
-				else
-				{
-					// TODO : 문제 상황
-					break;
-				}
-			}
+		// 문제 상황 : 연결된 이후 유저가 게임 접속 종료!
+		// CreateIoCompletionPort 로 넘겼던 주소가 유효하지 않은 주소가 되어버림..
+		// Overlapped 도 똑같음..
+		// 입출력을 건 아이는 메모리에서 날릴 수 없도록 보장해줘야 문제가 없음 (reference counting 등으로 해결)
+		// 오염된 메모리에 접근!
+		// library 만들 땐 Stomp Allocator 사용하면 편함.
 
-			else
-			{
-				cout << "Data Recv Len = " << recvLen << endl;
-			}
-		}
+		/*Session* s = sessionManager.back();
+		sessionManager.pop_back();
+		xdelete(s);*/
 
-		::closesocket(session.socket);
-		//::WSACloseEvent(wsaEvent);
+		// ::closesocket(session.socket);
+		// ::WSACloseEvent(wsaEvent);
 	}
 	
+	GThreadManager->Join();
+
 	// WinSock 종료
 	::WSACleanup();
 }

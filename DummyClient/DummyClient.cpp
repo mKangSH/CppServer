@@ -16,8 +16,6 @@ void HandleError(const char* cause)
 
 int main()
 {
-	this_thread::sleep_for(1s);
-
 	WSAData wsaData;
 	if (::WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 	{
@@ -100,6 +98,9 @@ int main()
 		
 		this_thread::sleep_for(1s);
 	}
+
+	// 소켓 리소스 반환
+	::closesocket(clientSocket);
 
 	// WinSock 종료
 	::WSACleanup();
