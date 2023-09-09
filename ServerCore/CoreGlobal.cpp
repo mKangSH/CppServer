@@ -3,6 +3,7 @@
 #include "ThreadManager.h"
 #include "Memory.h"
 #include "DeadLockProfiler.h"
+#include "SocketUtils.h"
 
 ThreadManager* GThreadManager = nullptr;
 MemoryManager* GMemoryManager = nullptr;
@@ -15,6 +16,7 @@ CoreGlobal::CoreGlobal()
 {
 	GThreadManager = new ThreadManager();
 	GMemoryManager = new MemoryManager();
+	SocketUtils::Init();
 
 #ifdef _DEBUG
 	GDeadLockProfiler = new DeadLockProfiler();
@@ -26,6 +28,7 @@ CoreGlobal::~CoreGlobal()
 {
 	delete GThreadManager;
 	delete GMemoryManager;
+	SocketUtils::Clear();
 
 #ifdef _DEBUG
 	delete GDeadLockProfiler;

@@ -7,17 +7,25 @@
 #include <future>
 #include "ThreadManager.h"
 
-#include <WinSock2.h>
-#include <MSWSock.h>
-#include <WS2tcpip.h>
-// 매우 중요
-#pragma comment(lib, "ws2_32.lib")
-
-#include "Memory.h"
-
+#include "SocketUtils.h"
 CoreGlobal GCoreGlobal;
 
 int main()
 {
+	SOCKET socket = SocketUtils::CreateSocket();
+
+	SocketUtils::BindAnyAddress(socket, 7777);
+
+	SocketUtils::Listen(socket);
+
+	SOCKET clientSocket = ::accept(socket, nullptr, nullptr);
+
+	cout << "Client Connected!" << endl;
+
+	while (true)
+	{
+
+	}
 	
+	GThreadManager->Join();
 }
