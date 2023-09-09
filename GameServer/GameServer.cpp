@@ -5,10 +5,15 @@
 #include <mutex>
 #include <Windows.h>
 #include <future>
-
-#include "RefCounting.h"
-#include "Memory.h"
 #include "ThreadManager.h"
+
+#include <WinSock2.h>
+#include <MSWSock.h>
+#include <WS2tcpip.h>
+// 매우 중요
+#pragma comment(lib, "ws2_32.lib")
+
+#include "Memory.h"
 
 CoreGlobal GCoreGlobal;
 

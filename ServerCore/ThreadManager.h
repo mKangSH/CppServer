@@ -19,7 +19,7 @@ public:
 	static void DestroyTLS();
 
 private:
-	Mutex			_lock;
+	Mutex			_locks;
 	vector<thread>	_threads;
 };
 
