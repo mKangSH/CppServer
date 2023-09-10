@@ -13,7 +13,7 @@
 using namespace std;
 
 template<typename Type>
-using xVector = vector<Type, StlAllocator<Type>>;
+using Vector = vector<Type, StlAllocator<Type>>;
 
 template<typename Type>
 using xList = list<Type, StlAllocator<Type>>;
@@ -33,7 +33,7 @@ using xQueue = queue<Type, Container>;
 template<typename Type, typename Container = xDeque<Type>>
 using xStack = stack<Type, Container>;
 
-template<typename Type, typename Container = xVector<Type>, typename Pred = less<typename Container::value_type>>
+template<typename Type, typename Container = Vector<Type>, typename Pred = less<typename Container::value_type>>
 using xPriorityQueue = priority_queue<Type, Container, Pred>;
 
 using xString = basic_string<char, char_traits<char>, StlAllocator<char>>;
