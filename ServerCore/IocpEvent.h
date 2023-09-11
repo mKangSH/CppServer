@@ -27,12 +27,11 @@ class IocpEvent : public OVERLAPPED
 public:
 	IocpEvent(EventType type);
 
-	void		Init();
-	EventType	GetType() { return _type; }
+	void Init();
 
-private:
-	EventType	_type;
-
+public:
+	IocpObjectRef	owner;
+	EventType		eventType;
 };
 
 //==============================//
@@ -57,13 +56,10 @@ class AcceptEvent : public IocpEvent
 public:
 	AcceptEvent() : IocpEvent(EventType::Accept) {}
 
-	void		SetSession(Session* session) { _session = session; }
-	Session*	GetSession() { return _session; }
-
-private:
+public:
 	// TODO : 추가 정보 들고 있어야 함. 인자를 가지고 있는 생성자를 쓸 수도 있음.
 	// Session 정보를 바인딩 Client Session
-	Session*	_session = nullptr;
+	SessionRef	session = nullptr;
 };
 
 //==============================//
