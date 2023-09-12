@@ -40,6 +40,7 @@ bool IocpCore::Dispatch(uint32 timeoutMs)
         switch (errCode)
         {
         case WAIT_TIMEOUT:
+            cout << "Time Out Error" << endl;
             return false;
 
         default:
