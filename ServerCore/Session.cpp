@@ -19,6 +19,19 @@ Session::~Session()
 
 void Session::Disconnect(const WCHAR* cause)
 {
+	if (_connected.exchange(false) == false)
+	{
+		return;
+	}
+
+	// TEMP 
+	wcout << "Disconnect : " << cause << endl;
+
+	// ÄÁÅÙÃ÷ ´Ü¿¡¼­ ¿À¹ö·Îµù
+	OnDisconnected();
+
+	SocketUtils::Close(_socket);
+	GetService()->ReleaseSession(GetSessionRef());
 }
 
 HANDLE Session::GetHandle()
