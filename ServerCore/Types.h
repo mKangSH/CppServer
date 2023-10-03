@@ -24,6 +24,7 @@ using IocpCoreRef		= std::shared_ptr<class IocpCore>;
 using ListenerRef		= std::shared_ptr<class Listener>;
 using IocpObjectRef		= std::shared_ptr<class IocpObject>;
 using ServerServiceRef	= std::shared_ptr<class ServerService>;
+using ClientServiceRef	= std::shared_ptr<class ClientService>;
 
 #define len16(arr)	static_cast<int16>(sizeof(arr) / sizeof(arr[0]))
 #define len32(arr)	static_cast<int32>(sizeof(arr) / sizeof(arr[0]))

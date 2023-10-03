@@ -5,6 +5,7 @@ class Session;
 enum class EventType : uint8
 {
 	Connect,
+	Disconnect,
 	Accept,
 	// PreRecv, 0 Byte Receive 기법과 연관됨 
 	Recv,
@@ -42,6 +43,19 @@ class ConnectEvent : public IocpEvent
 {
 public:
 	ConnectEvent() : IocpEvent(EventType::Connect) {}
+
+private:
+
+};
+
+//==============================//
+//		  DisConnectEvent		//
+//==============================//
+
+class DisConnectEvent : public IocpEvent
+{
+public:
+	DisConnectEvent() : IocpEvent(EventType::Disconnect) {}
 
 private:
 
