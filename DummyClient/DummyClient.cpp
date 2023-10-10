@@ -3,8 +3,6 @@
 #include "Service.h"
 #include "Session.h"
 
-CoreGlobal GCoreGlobal;
-
 char sendBuffer[] = "Hello World!";
 
 class ServerSession : public Session
@@ -26,7 +24,7 @@ public:
 		// Echo
 		cout << "OnRecv Len = " << len << endl;
 
-		this_thread::sleep_for(1s);
+		this_thread::sleep_for(100ms);
 
 		Send((BYTE*)sendBuffer, sizeof(sendBuffer));
 		return len;

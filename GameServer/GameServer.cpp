@@ -3,8 +3,6 @@
 #include "Service.h"
 #include "Session.h"
 
-CoreGlobal GCoreGlobal;
-
 class GameSession : public Session
 {
 public:
