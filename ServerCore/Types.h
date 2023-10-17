@@ -25,6 +25,7 @@ using ListenerRef		= std::shared_ptr<class Listener>;
 using IocpObjectRef		= std::shared_ptr<class IocpObject>;
 using ServerServiceRef	= std::shared_ptr<class ServerService>;
 using ClientServiceRef	= std::shared_ptr<class ClientService>;
+using SendBufferRef		= std::shared_ptr<class SendBuffer>;
 
 #define len16(arr)	static_cast<int16>(sizeof(arr) / sizeof(arr[0]))
 #define len32(arr)	static_cast<int32>(sizeof(arr) / sizeof(arr[0]))
