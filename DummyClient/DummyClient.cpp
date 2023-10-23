@@ -17,8 +17,10 @@ public:
 	{
 		cout << "Connected To Server!" << endl;
 
-		SendBufferRef sendBuffer = MakeShared<SendBuffer>(4096);
-		sendBuffer->CopyData(sendData, sizeof(sendData));
+		SendBufferRef sendBuffer = GSendBufferManager->Open(4096);
+		::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
+		sendBuffer->Close(sizeof(sendData));
+
 		Send(sendBuffer);
 	}
 
@@ -27,8 +29,12 @@ public:
 		// Echo
 		cout << "OnRecv Len = " << len << endl;
 
-		SendBufferRef sendBuffer = MakeShared<SendBuffer>(4096);
-		sendBuffer->CopyData(sendData, sizeof(sendData));
+		this_thread::sleep_for(100ms);
+
+		SendBufferRef sendBuffer = GSendBufferManager->Open(4096);
+		::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
+		sendBuffer->Close(sizeof(sendData));
+
 		Send(sendBuffer);
 
 		return len;

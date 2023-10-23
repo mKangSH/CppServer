@@ -1,10 +1,11 @@
 #pragma once
 
-extern class ThreadManager* GThreadManager;
-extern class MemoryManager* GMemoryManager;
+extern class ThreadManager*		GThreadManager;
+extern class MemoryManager*		GMemoryManager;
+extern class SendBufferManager* GSendBufferManager;
 
 #ifdef _DEBUG
-extern class DeadLockProfiler* GDeadLockProfiler;
+extern class DeadLockProfiler*	GDeadLockProfiler;
 #endif
 
 // 매니저가 많아질 경우
