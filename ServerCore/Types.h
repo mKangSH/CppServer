@@ -20,6 +20,7 @@ using UniqueLock			= std::unique_lock<std::mutex>;
 using ConditionVariable		= std::condition_variable;
 
 using SessionRef			= std::shared_ptr<class Session>;
+using PacketSessionRef		= std::shared_ptr<class PacketSession>;
 using IocpCoreRef			= std::shared_ptr<class IocpCore>;
 using ListenerRef			= std::shared_ptr<class Listener>;
 using IocpObjectRef			= std::shared_ptr<class IocpObject>;
