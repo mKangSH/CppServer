@@ -22,5 +22,7 @@ void GameSessionManager::BroadCast(SendBufferRef sendBuffer)
 	for (GameSessionRef session : _sessions)
 	{
 		session->Send(sendBuffer);
+		// broadcast -> remover 재귀적 호출이 이루어져서 client disconnect 되면 에러 발생
+
 	}
 }
