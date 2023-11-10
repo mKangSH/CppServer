@@ -23,9 +23,7 @@ public:
 	template<typename T>
 	T*				Reserve();
 
-	template<typename T>
-	BufferWriter&	operator<<(IN T& src);
-
+	// 보편 참조
 	template<typename T>
 	BufferWriter&	operator<<(IN T&& src);
 
@@ -49,18 +47,11 @@ T* BufferWriter::Reserve()
 }
 
 template<typename T>
-inline BufferWriter& BufferWriter::operator<<(OUT T& src)
-{
-	*reinterpret_cast<T*>(&_buffer[_pos]) = src;
-	_pos += sizeof(T);
-
-	return *this;
-}
-
-template<typename T>
 inline BufferWriter& BufferWriter::operator<<(OUT T&& src)
 {
-	*reinterpret_cast<T*>(&_buffer[_pos]) = std::move(src);
+	using DataType = std::remove_reference_t<T>;
+
+	*reinterpret_cast<DataType*>(&_buffer[_pos]) = std::forward<DataType>(src);
 	_pos += sizeof(T);
 
 	return *this;
