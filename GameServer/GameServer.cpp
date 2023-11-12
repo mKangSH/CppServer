@@ -32,7 +32,8 @@ int main()
 
 	while (true)
 	{
-		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10);
+		vector<BuffData> buffs{ BuffData{100, 1.5f}, BuffData{200, 2.3f}, BuffData {300, 0.7f} };
+		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs);
 		GSessionManager.BroadCast(sendBuffer);
 
 		this_thread::sleep_for(250ms);
