@@ -8,8 +8,28 @@
 #include "ServerPacketHandler.h"
 #include <tchar.h>
 
+// 패킷 설계 TEMP
+#pragma pack(1)
+struct PKT_S_TEST
+{
+	uint64 id; // 8
+	uint32 hp; // 4
+	uint16 attack; // 2
+
+	// 가변 데이터
+	// 1) 문자열 (ex.name) Encoding Issue
+	// 2) 일반 바이트 배열 (ex. 길드 이미지)
+	// 3) 일반 리스트
+
+	// vector<BuffData> buffs;
+	// wstring name;
+};
+#pragma pack()
+
 int main()
 {
+	PKT_S_TEST pkt;
+
 	ServerServiceRef service = MakeShared<ServerService>(
 		NetAddress(L"127.0.0.1", 7777), 
 		MakeShared<IocpCore>(), 

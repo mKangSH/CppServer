@@ -18,6 +18,7 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 	}
 }
 
+#pragma pack(1)
 struct BuffData
 {
 	uint64 buffId;
@@ -25,28 +26,38 @@ struct BuffData
 };
 
 // 패킷 설계 TEMP
-struct S_TEST
+struct PKT_S_TEST
 {
-	uint64 id;
-	uint32 hp;
-	uint16 attack;
+	uint16 packetSize;
+	uint16 packetId;
 
+	uint64 id; // 8
+	uint32 hp; // 4
+	uint16 attack; // 2
+
+	uint16 buffsOffset;
+	uint16 buffsCount;
 	// 가변 데이터
 	// 1) 문자열 (ex.name) Encoding Issue
 	// 2) 일반 바이트 배열 (ex. 길드 이미지)
 	// 3) 일반 리스트
-	vector<BuffData> buffs;
-
-	wstring name;
+	
+	// vector<BuffData> buffs;
+	// wstring name;
 };
+#pragma pack()
 
 void ClientPacketHandler::Handle_S_TEST(BYTE* buffer, int32 len)
 {
 	BufferReader br(buffer, len);
 
-	// TEMP
-	PacketHeader header;
-	br >> header;
+	if (len < sizeof(PKT_S_TEST))
+	{
+		return;
+	}
+
+	PKT_S_TEST pkt;
+	br >> pkt;
 
 	uint64 id;
 	uint32 hp;
