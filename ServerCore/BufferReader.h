@@ -13,7 +13,7 @@ public:
 
 	BYTE*			Buffer() { return _buffer; }
 	uint32			Size() { return _size; }
-	uint32			ReadSize() { return _size; }
+	uint32			ReadSize() { return _pos; }
 	uint32			FreeSize() { return _size - _pos; }
 
 	template<typename T>
