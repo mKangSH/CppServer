@@ -19,13 +19,27 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 }
 
 #pragma pack(1)
-// [PKT_S_TEST] [BuffData BuffData BuffData]
+// [PKT_S_TEST] [BuffsListItem BuffsListItem BuffsListItem]
 struct PKT_S_TEST
 {
 	struct BuffsListItem
 	{
 		uint64 buffId;
 		float remainTime;
+
+		uint16 victimsOffset;
+		uint16 victimsCount;
+
+		bool Validate(BYTE* packetStart, uint16 packetSize, OUT uint32& size)
+		{
+			if (victimsOffset + victimsCount * sizeof(uint64) > packetSize)
+			{
+				return false;
+			}
+
+			size += victimsCount * sizeof(uint64);
+			return true;
+		}
 	};
 
 	uint16 packetSize;	// 2
@@ -39,11 +53,8 @@ struct PKT_S_TEST
 	bool Validate()
 	{
 		uint32 size = 0;
-
 		size += sizeof(PKT_S_TEST);
-		size += buffsCount * sizeof(BuffsListItem);
-
-		if (size != packetSize)
+		if (packetSize < size)
 		{
 			return false;
 		}
@@ -53,8 +64,45 @@ struct PKT_S_TEST
 			return false;
 		}
 
+		size += buffsCount * sizeof(BuffsListItem);
+
+		BuffsList buffList = GetBuffsList();
+		for (int32 i = 0; i < buffList.Count(); i++)
+		{
+			if (buffList[i].Validate((BYTE*)this, packetSize, OUT size) == false)
+			{
+				return false;
+			}
+		}
+
+		if (size != packetSize)
+		{
+			return false;
+		}
+
 		return true;
 	}
+
+	// Flat Buffer
+	using BuffsList = PacketList<PKT_S_TEST::BuffsListItem>;
+	using BuffsVictimsList = PacketList<uint64>;
+
+	BuffsList GetBuffsList()
+	{
+		BYTE* data = reinterpret_cast<BYTE*>(this);
+		data += buffsOffset;
+
+		return BuffsList(reinterpret_cast<PKT_S_TEST::BuffsListItem*>(data), buffsCount);
+	}
+
+	BuffsVictimsList GetBufferVictimList(BuffsListItem* buffsItem)
+	{
+		BYTE* data = reinterpret_cast<BYTE*>(this);
+		data += buffsItem->victimsOffset;
+
+		return BuffsVictimsList(reinterpret_cast<uint64*>(data), buffsItem->victimsCount);
+	}
+
 	// vector<BuffData> buffs;
 	// wstring name;
 };
@@ -65,30 +113,35 @@ void ClientPacketHandler::Handle_S_TEST(BYTE* buffer, int32 len)
 {
 	BufferReader br(buffer, len);
 
-	if (len < sizeof(PKT_S_TEST))
+	PKT_S_TEST* pkt = reinterpret_cast<PKT_S_TEST*>(buffer);
+
+	if (pkt->Validate() == false)
 	{
 		return;
 	}
 
-	PKT_S_TEST pkt;
-	br >> pkt;
+	PKT_S_TEST::BuffsList buffs = pkt->GetBuffsList();
 
-	if (pkt.Validate() == false)
-	{
-		return;
-	}
-
-	vector<PKT_S_TEST::BuffsListItem> buffs;
-
-	buffs.resize(pkt.buffsCount);
-	for (int32 i = 0; i < pkt.buffsCount; i++)
-	{
-		br >> buffs[i];
-	}
-
-	cout << "BuffCount : " << pkt.buffsCount << endl;
-	for (int32 i = 0; i < pkt.buffsCount; i++)
+	cout << "BuffCount : " << buffs.Count() << endl;
+	for (int32 i = 0; i < buffs.Count(); i++)
 	{
 		cout << "Buf Info : " << buffs[i].buffId << " " << buffs[i].remainTime << endl;
+
+		PKT_S_TEST::BuffsVictimsList victims = pkt->GetBufferVictimList(&buffs[i]);
+
+		for (int32 j = 0; j < victims.Count(); j++)
+		{
+			cout << "Victim : " << victims[j] << endl;
+		}
 	}
+
+	//for (auto it = buffs.begin(); it != buffs.end(); ++it)
+	//{
+	//	cout << "Buf Info : " << it->buffId << " " << it->remainTime << endl;
+	//}
+
+	//for (auto& buff : buffs)
+	//{
+	//	cout << "Buf Info : " << buff.buffId << " " << buff.remainTime << endl;
+	//}
 }
