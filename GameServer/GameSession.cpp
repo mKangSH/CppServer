@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "GameSession.h"
 #include "GameSessionManager.h"
-#include "ServerPacketHandler.h"
+#include "ClientPacketHandler.h"
 
 void GameSession::OnConnected()
 {
@@ -15,7 +15,16 @@ void GameSession::OnDisconnected()
 
 void GameSession::OnRecvPacket(BYTE* buffer, int32 len)
 {
-	ServerPacketHandler::HandlePacket(buffer, len);
+	PacketSessionRef session = GetPacketSessionRef();
+	PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
+
+	// TODO : PacketId 대역 체크
+	// 서버가 여러 종류로 붙을 경우
+	// 패킷 헤더를 참고하여 아이디 대역대, 사이즈 등을
+	// 참고하여 클라이언트, DB 서버, 게임 서버 등
+	// 받아온 패킷이 어디서 보내온 데이터인지 확인해야 함
+
+	ClientPacketHandler::HandlePacket(session, buffer, len);
 }
 
 void GameSession::OnSend(int32 len)
