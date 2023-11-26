@@ -24,29 +24,29 @@ namespace Protocol {
     static StructReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxTdHJ1Y3QucHJvdG8SCFByb3RvY29sGgpFbnVtLnByb3RvIj8KCEJ1ZmZE",
-            "YXRhEg4KBmJ1ZmZJZBgBIAEoBBISCgpyZW1haW5UaW1lGAIgASgCEg8KB3Zp",
-            "Y3RpbXMYAyADKARiBnByb3RvMw=="));
+            "CgxTdHJ1Y3QucHJvdG8SCFByb3RvY29sGgpFbnVtLnByb3RvIkwKBlBsYXll",
+            "chIKCgJpZBgBIAEoBBIMCgRuYW1lGAIgASgJEigKCnBsYXllclR5cGUYAyAB",
+            "KA4yFC5Qcm90b2NvbC5QbGF5ZXJUeXBlYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Protocol.EnumReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.BuffData), global::Protocol.BuffData.Parser, new[]{ "BuffId", "RemainTime", "Victims" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Protocol.Player), global::Protocol.Player.Parser, new[]{ "Id", "Name", "PlayerType" }, null, null, null, null)
           }));
     }
     #endregion
 
   }
   #region Messages
-  public sealed partial class BuffData : pb::IMessage<BuffData>
+  public sealed partial class Player : pb::IMessage<Player>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<BuffData> _parser = new pb::MessageParser<BuffData>(() => new BuffData());
+    private static readonly pb::MessageParser<Player> _parser = new pb::MessageParser<Player>(() => new Player());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<BuffData> Parser { get { return _parser; } }
+    public static pb::MessageParser<Player> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -62,7 +62,7 @@ namespace Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public BuffData() {
+    public Player() {
       OnConstruction();
     }
 
@@ -70,72 +70,73 @@ namespace Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public BuffData(BuffData other) : this() {
-      buffId_ = other.buffId_;
-      remainTime_ = other.remainTime_;
-      victims_ = other.victims_.Clone();
+    public Player(Player other) : this() {
+      id_ = other.id_;
+      name_ = other.name_;
+      playerType_ = other.playerType_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public BuffData Clone() {
-      return new BuffData(this);
+    public Player Clone() {
+      return new Player(this);
     }
 
-    /// <summary>Field number for the "buffId" field.</summary>
-    public const int BuffIdFieldNumber = 1;
-    private ulong buffId_;
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private ulong id_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public ulong BuffId {
-      get { return buffId_; }
+    public ulong Id {
+      get { return id_; }
       set {
-        buffId_ = value;
+        id_ = value;
       }
     }
 
-    /// <summary>Field number for the "remainTime" field.</summary>
-    public const int RemainTimeFieldNumber = 2;
-    private float remainTime_;
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 2;
+    private string name_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public float RemainTime {
-      get { return remainTime_; }
+    public string Name {
+      get { return name_; }
       set {
-        remainTime_ = value;
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
-    /// <summary>Field number for the "victims" field.</summary>
-    public const int VictimsFieldNumber = 3;
-    private static readonly pb::FieldCodec<ulong> _repeated_victims_codec
-        = pb::FieldCodec.ForUInt64(26);
-    private readonly pbc::RepeatedField<ulong> victims_ = new pbc::RepeatedField<ulong>();
+    /// <summary>Field number for the "playerType" field.</summary>
+    public const int PlayerTypeFieldNumber = 3;
+    private global::Protocol.PlayerType playerType_ = global::Protocol.PlayerType.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<ulong> Victims {
-      get { return victims_; }
+    public global::Protocol.PlayerType PlayerType {
+      get { return playerType_; }
+      set {
+        playerType_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as BuffData);
+      return Equals(other as Player);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(BuffData other) {
+    public bool Equals(Player other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (BuffId != other.BuffId) return false;
-      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(RemainTime, other.RemainTime)) return false;
-      if(!victims_.Equals(other.victims_)) return false;
+      if (Id != other.Id) return false;
+      if (Name != other.Name) return false;
+      if (PlayerType != other.PlayerType) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -143,9 +144,9 @@ namespace Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (BuffId != 0UL) hash ^= BuffId.GetHashCode();
-      if (RemainTime != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(RemainTime);
-      hash ^= victims_.GetHashCode();
+      if (Id != 0UL) hash ^= Id.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (PlayerType != global::Protocol.PlayerType.None) hash ^= PlayerType.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -164,15 +165,18 @@ namespace Protocol {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (BuffId != 0UL) {
+      if (Id != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt64(BuffId);
+        output.WriteUInt64(Id);
       }
-      if (RemainTime != 0F) {
-        output.WriteRawTag(21);
-        output.WriteFloat(RemainTime);
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
       }
-      victims_.WriteTo(output, _repeated_victims_codec);
+      if (PlayerType != global::Protocol.PlayerType.None) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) PlayerType);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -183,15 +187,18 @@ namespace Protocol {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (BuffId != 0UL) {
+      if (Id != 0UL) {
         output.WriteRawTag(8);
-        output.WriteUInt64(BuffId);
+        output.WriteUInt64(Id);
       }
-      if (RemainTime != 0F) {
-        output.WriteRawTag(21);
-        output.WriteFloat(RemainTime);
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
       }
-      victims_.WriteTo(ref output, _repeated_victims_codec);
+      if (PlayerType != global::Protocol.PlayerType.None) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) PlayerType);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -202,13 +209,15 @@ namespace Protocol {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (BuffId != 0UL) {
-        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(BuffId);
+      if (Id != 0UL) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Id);
       }
-      if (RemainTime != 0F) {
-        size += 1 + 4;
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
-      size += victims_.CalculateSize(_repeated_victims_codec);
+      if (PlayerType != global::Protocol.PlayerType.None) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) PlayerType);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -217,17 +226,19 @@ namespace Protocol {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(BuffData other) {
+    public void MergeFrom(Player other) {
       if (other == null) {
         return;
       }
-      if (other.BuffId != 0UL) {
-        BuffId = other.BuffId;
+      if (other.Id != 0UL) {
+        Id = other.Id;
       }
-      if (other.RemainTime != 0F) {
-        RemainTime = other.RemainTime;
+      if (other.Name.Length != 0) {
+        Name = other.Name;
       }
-      victims_.Add(other.victims_);
+      if (other.PlayerType != global::Protocol.PlayerType.None) {
+        PlayerType = other.PlayerType;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -244,16 +255,15 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            BuffId = input.ReadUInt64();
+            Id = input.ReadUInt64();
             break;
           }
-          case 21: {
-            RemainTime = input.ReadFloat();
+          case 18: {
+            Name = input.ReadString();
             break;
           }
-          case 26:
           case 24: {
-            victims_.AddEntriesFrom(input, _repeated_victims_codec);
+            PlayerType = (global::Protocol.PlayerType) input.ReadEnum();
             break;
           }
         }
@@ -272,16 +282,15 @@ namespace Protocol {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 8: {
-            BuffId = input.ReadUInt64();
+            Id = input.ReadUInt64();
             break;
           }
-          case 21: {
-            RemainTime = input.ReadFloat();
+          case 18: {
+            Name = input.ReadString();
             break;
           }
-          case 26:
           case 24: {
-            victims_.AddEntriesFrom(ref input, _repeated_victims_codec);
+            PlayerType = (global::Protocol.PlayerType) input.ReadEnum();
             break;
           }
         }
