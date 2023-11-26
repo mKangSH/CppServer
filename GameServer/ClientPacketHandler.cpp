@@ -59,8 +59,9 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 	// TODO : Validation Check
 
 	PlayerRef player = gameSession->_players[index]; // Read_only
-	GRoom.PushJob(MakeShared<EnterJob>(GRoom, player));
-
+	
+	// GRoom.PushJob(MakeShared<EnterJob>(GRoom, player));
+	GRoom.PushJob(&Room::Enter, player);
 
 	// TODO Enter 이후에 실행되는 아래 구문을 적절한 위치로 옮겨야 함
 	Protocol::S_ENTER_GAME enterGamePkt;
@@ -80,7 +81,9 @@ bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt)
 	chatPkt.set_msg(pkt.msg());
 
 	auto sendBuffer = ClientPacketHandler::MakeSendBuffer(chatPkt);
-	GRoom.PushJob(MakeShared<BroadcastJob>(GRoom, sendBuffer)); // WRITE_LOCK
+
+	// GRoom.PushJob(MakeShared<BroadcastJob>(GRoom, sendBuffer)); // WRITE_LOCK
+	GRoom.PushJob(&Room::Broadcast, sendBuffer);
 
 	return true;
 }

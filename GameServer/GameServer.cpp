@@ -11,24 +11,43 @@
 #include "Room.h"
 #include "Job.h"
 
+void HealByValue(int64 target, int32 value)
+{
+	cout << target << " " << value << " " << endl;
+}
+
+class Knight
+{
+public:
+	void HealMe(int32 value)
+	{
+		cout << "HealMe! " << value << endl;
+	}
+};
+
 int main()
 {
+	auto s = gen_seq<3>();
+
+	// gen_seq<3> : gen_seq<2, 2>
+	// gen_seq<2, 2> : gen_seq<1, 1, 2>
+	// gen_seq<1, 1, 2> : gen_seq<0, 0, 1, 2> 
+	// gen_seq<0, 0, 1, 2> : seq<0 , 1, 2>
+	
+	// sequence type 으로 받는 함수를 만들면..
+	// gen_seq == seq<0, 1, 2> 가 돼서 
+
 	// TEST JOB
 	{
-		// [의뢰 내용] : 1번 유저에게 10만큼 힐을 줘라
-		// [행동] : Heal
-		// [인자] : 1번 유저, 힐량 10
-		HealJob healJob;
-		healJob._target = 1;
-		healJob._healValue = 10;
-
-		// 나중에
-		healJob.Execute();
+		FuncJob<void, int64, int32> job(HealByValue, 100, 10);
+		job.Execute();
 	}
 
 	// JOB
 	{
-
+		Knight k1;
+		MemberJob job2(&k1, &Knight::HealMe, 10);
+		job2.Execute();
 	}
 
 	ClientPacketHandler::Init();
