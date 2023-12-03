@@ -7,49 +7,34 @@
 #include "BufferWriter.h"
 #include "ClientPacketHandler.h"
 #include <tchar.h>
+#include <functional>
 #include "Protocol.pb.h"
 #include "Room.h"
 #include "Job.h"
+#include "Player.h"
 
-void HealByValue(int64 target, int32 value)
+enum
 {
-	cout << target << " " << value << " " << endl;
-}
-
-class Knight
-{
-public:
-	void HealMe(int32 value)
-	{
-		cout << "HealMe! " << value << endl;
-	}
+	WORKER_TICK = 64,
 };
+
+void DoWorkerJob(ServerServiceRef& service)
+{
+	while (true)
+	{
+		// WORKER Tick 하드코딩된 부분을 바꾸는 법도 생각
+		LEndTickCount = ::GetTickCount64() + WORKER_TICK;
+		
+		// Network IO 처리 -> 인게임 로직까지 (Packet Handler에 의해)
+		service->GetIocpCore()->Dispatch(10);
+
+		// Global Queue
+		ThreadManager::DoGlobalQueueWork();
+	}
+}
 
 int main()
 {
-	auto s = gen_seq<3>();
-
-	// gen_seq<3> : gen_seq<2, 2>
-	// gen_seq<2, 2> : gen_seq<1, 1, 2>
-	// gen_seq<1, 1, 2> : gen_seq<0, 0, 1, 2> 
-	// gen_seq<0, 0, 1, 2> : seq<0 , 1, 2>
-	
-	// sequence type 으로 받는 함수를 만들면..
-	// gen_seq == seq<0, 1, 2> 가 돼서 
-
-	// TEST JOB
-	{
-		FuncJob<void, int64, int32> job(HealByValue, 100, 10);
-		job.Execute();
-	}
-
-	// JOB
-	{
-		Knight k1;
-		MemberJob job2(&k1, &Knight::HealMe, 10);
-		job2.Execute();
-	}
-
 	ClientPacketHandler::Init();
 
 	ServerServiceRef service = MakeShared<ServerService>(
@@ -62,20 +47,17 @@ int main()
 
 	for (int32 i = 0; i < 5; i++)
 	{
-		GThreadManager->Launch([=]()
+		GThreadManager->Launch([&service]()
 			{
 				while (true)
 				{
-					service->GetIocpCore()->Dispatch();
+					DoWorkerJob(service);
 				}
 			});
 	}
 
-	while (true)
-	{
-		GRoom.FlushJob();
-		this_thread::sleep_for(1ms);
-	}
+	// Main Thread
+	DoWorkerJob(service);
 
 	GThreadManager->Join();
 }

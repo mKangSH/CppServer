@@ -366,7 +366,7 @@ int32 PacketSession::OnRecv(BYTE* buffer, int32 len)
 			break;
 		}
 
-		// 패킷 조힙 성공
+		// 패킷 조립 성공
 		OnRecvPacket(&buffer[processLen], header.size);
 
 		processLen += header.size;
