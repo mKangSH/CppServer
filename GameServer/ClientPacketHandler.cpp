@@ -58,17 +58,18 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 	uint64 index = pkt.playerindex();
 	// TODO : Validation Check
 
-	PlayerRef player = gameSession->_players[index]; // Read_only
+	gameSession->_currentPlayer = gameSession->_players[index]; // Read_only
+	gameSession->_room = GRoom;
 	
 	// GRoom.PushJob(MakeShared<EnterJob>(GRoom, player));
-	GRoom->DoAsync(&Room::Enter, player);
+	GRoom->DoAsync(&Room::Enter, gameSession->_currentPlayer);
 
 	// TODO Enter 이후에 실행되는 아래 구문을 적절한 위치로 옮겨야 함
 	Protocol::S_ENTER_GAME enterGamePkt;
 	enterGamePkt.set_success(true);
 
 	auto sendBuffer = ClientPacketHandler::MakeSendBuffer(enterGamePkt);
-	player->ownerSession->Send(sendBuffer);
+	gameSession->_currentPlayer->ownerSession->Send(sendBuffer);
 
 	return true;
 }

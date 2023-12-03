@@ -16,4 +16,7 @@ public:
 
 public:
 	Vector<PlayerRef> _players;
+
+	PlayerRef _currentPlayer;
+	weak_ptr<class Room> _room; // Id를 저장해서 Hash Table 등으로 빼오는 방법도 있음.
 };
